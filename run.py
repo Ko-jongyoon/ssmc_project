@@ -60,29 +60,36 @@ def join2():
 @app.route('/foodlist',methods=['POST'])
 def foodinfo():
     food_from_db = searchFoods(request.form['keyword'])
-    return render_template('main.html',foods=food_from_db,count=len(food_from_db))
-
-@app.route('/mypage',methods=['POST'])
+    if food_from_db:
+        return render_template('main.html',foods=food_from_db,count=len(food_from_db))
+    else:
+        return render_template('sub/add.html',msg="해당 음식이 없습니다.")
+@app.route('/mypage')
 def mypage():
-    return render_template('mypage.html')
+    uid =session['user_id']
+    add_result_db = searchRecentFood(uid,10)
+    return render_template('mypage.html',foods=add_result_db,count=len(add_result_db))
 
 @app.route('/add',methods=['POST'])
 def add():
     fid = request.form['fid']
+    inbun= request.form['inbun']
     rows = selectFoodData(fid)
-    if rows :
-        return jsonify(rows)
-    else:
-        return jsonify([])
 
-@app.route('/search',methods=['POST'])
-def search():
-    rows = searchFoods(request.form['keyword'])
-    if rows :
-        return jsonify(rows)
-    else:
-        return jsonify([])
+    uid = session['user_id']
+    if 'user_id'in session:
+        insertFoodData(uid,fid,inbun)
+        return render_template("sub/add.html",msg="추가되었습니다")
+    else:  
+        return render_template("sub/add.html",msg="로그인해주세요" )
 
+@app.route('/deletefood',methods=['POST'])
+def deletefood():
+    fid = request.form['fid']
+    uid = session['user_id']
+    deleteFoodData(uid,fid)
+    return render_template("sub/delete.html",msg="삭제되었습니다",url='http://localhost:5000/mypage')
+    
 
 if __name__ == '__main__':# 이코드를 메인으로 구동시 서버가동
     app.run(debug=True)
